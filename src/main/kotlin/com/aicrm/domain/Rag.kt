@@ -7,6 +7,8 @@ data class RagService(
     val name: String,
     val description: String?,
     val region: String,
+    /** Same slug as [Lead.vertical] when triage matches this row (e.g. picolabbs_wellness). */
+    val category: String?,
     val createdAt: Instant
 )
 

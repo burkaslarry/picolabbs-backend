@@ -19,6 +19,15 @@ import java.time.Instant
 @RestController
 class UsersController(private val userRepository: UserRepository) {
 
+    /** CRM operator roles (stored in aicrm_picolabbs_user.role). */
+    private val allowedRoles = setOf(
+        "superadmin",
+        "operator",
+        "ops_front",
+        "ops_back",
+        "ops_reminder"
+    )
+
     @GetMapping
     fun list(): List<Map<String, Any?>> =
         userRepository.findAll().map { toMap(it) }
@@ -34,10 +43,9 @@ class UsersController(private val userRepository: UserRepository) {
         val email = sanitizeString(body["email"]?.toString(), 255) ?: return ResponseEntity.badRequest().body(mapOf("error" to "email required"))
         if (userRepository.findByEmail(email) != null) return ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf("error" to "Email already exists"))
         val name = sanitizeString(body["name"]?.toString(), 255)
-        val role = when (val r = sanitizeString(body["role"]?.toString(), 20)?.lowercase()) {
-            "superadmin", "operator" -> r
-            else -> "operator"
-        }
+        val role = sanitizeString(body["role"]?.toString(), 32)?.lowercase()
+            ?.takeIf { it in allowedRoles }
+            ?: "ops_front"
         val user = User(id = uuid(), email = email, name = name, role = role, createdAt = Instant.now())
         userRepository.insert(user)
         return ResponseEntity.status(HttpStatus.CREATED).body(toMap(user))
@@ -46,8 +54,8 @@ class UsersController(private val userRepository: UserRepository) {
     @PatchMapping("/{id}")
     fun patch(@PathVariable id: String, @RequestBody body: Map<String, Any?>): ResponseEntity<Any> {
         val user = userRepository.findById(id) ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "User not found"))
-        val role = body["role"]?.toString()?.lowercase()?.take(20)
-        if (role != null && (role == "superadmin" || role == "operator")) {
+        val role = body["role"]?.toString()?.lowercase()?.take(32)
+        if (role != null && role in allowedRoles) {
             userRepository.updateRole(id, role)
             val updated = userRepository.findById(id)!!
             return ResponseEntity.ok(toMap(updated))

@@ -20,7 +20,8 @@ data class TriageResult(
 @Service
 class TriageService(
     private val normalizationService: NormalizationService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val ragVerticalMatcher: RagVerticalMatcher
 ) {
 
     /** Zomate Fitness (zoesportdiary.com) — women-first gym, TST / Sheung Wan */
@@ -107,6 +108,7 @@ class TriageService(
     )
 
     private fun detectVertical(text: String): String {
+        ragVerticalMatcher.matchVerticalFromCatalog(text)?.let { return it }
         val lower = text.lowercase()
         var best = "unknown" to 0
         for ((v, keywords) in verticalKeywords) {

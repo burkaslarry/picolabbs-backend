@@ -2,6 +2,16 @@
 
 Backend for PicoLabbs CRM, connecting to remote PostgreSQL.
 
+## PostgreSQL migrations (existing databases)
+
+New installs pick up columns from `schema-postgresql.sql`. If your database was created earlier, run:
+
+`src/main/resources/migrations/001_rag_category_and_med_spa_cleanup.sql`
+
+This adds `category` to `aicrm_picolabbs_rag_products` and `aicrm_picolabbs_rag_services`, clears legacy `med_spa` verticals, and removes RAG rows tagged with 醫美 / `med_spa`.
+
+**RAG CSV:** use optional column `category` (or `大類` / `分類`) with the same slug you want on leads (e.g. `picolabbs_wellness`). Triage matches inquiry text to product/service **names** and copies that row’s `category` into `leads.vertical`.
+
 ## Table Structure
 
 All tables are prefixed with `aicrm_picolabbs_` to prevent clashes in a shared database:

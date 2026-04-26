@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS rag_services (
     name VARCHAR(500) NOT NULL,
     description CLOB,
     region VARCHAR(10) NOT NULL DEFAULT 'hk',
+    category VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS rag_products (
@@ -93,6 +94,7 @@ CREATE TABLE IF NOT EXISTS rag_products (
     name VARCHAR(500) NOT NULL,
     description CLOB,
     region VARCHAR(10) NOT NULL DEFAULT 'hk',
+    category VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_rag_services_region ON rag_services(region);

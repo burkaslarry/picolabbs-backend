@@ -78,16 +78,10 @@ class NormalizationService {
             if (Regex("一對一|私教|私人教練|personal\\s*trainer|\\bpt\\b").containsMatchIn(lower)) return "1-on-1 personal training"
             if (Regex("健身|女教練|女子|gym|workout|fitness").containsMatchIn(lower)) return "Women’s gym / PT"
         }
-        if (vertical == "med_spa") {
-            if (Regex("laser\\s*hair|脫毛|hair removal").containsMatchIn(lower)) return "Laser hair removal"
-            if (Regex("facial|面部").containsMatchIn(lower)) return "Facial"
-            if (Regex("consult|consultation|諮詢").containsMatchIn(lower)) return "Consultation"
-            if (Regex("pigment|斑|美白").containsMatchIn(lower)) return "Pigmentation treatment"
-            if (Regex("acne|暗瘡|痘").containsMatchIn(lower)) return "Acne treatment"
-        }
-        if (vertical == "training") {
+        if (vertical == "training" || vertical.startsWith("picolabbs_")) {
             if (Regex("nail|美甲|指甲").containsMatchIn(lower)) return "Nail course"
-            if (Regex("beauty|美容|化妝").containsMatchIn(lower)) return "Beauty course"
+            if (Regex("beauty|美容|化妝|wellness").containsMatchIn(lower)) return "Beauty course"
+            if (Regex("iwand|irelief|shield|picolabb", RegexOption.IGNORE_CASE).containsMatchIn(lower)) return "Product inquiry"
         }
         return null
     }
@@ -99,10 +93,10 @@ class NormalizationService {
             if (extracted.preferredDates.isNullOrEmpty() && extracted.preferredTime == null) missing.add("preferred_date_time")
             if (extracted.location == null) missing.add("branch_tst_or_sheung_wan")
         }
-        if (vertical == "med_spa") {
-            if (extracted.serviceName == null) missing.add("service")
+        if (vertical.startsWith("picolabbs_")) {
+            if (extracted.serviceName == null) missing.add("product_or_service")
             if (extracted.preferredDates.isNullOrEmpty() && extracted.preferredTime == null) missing.add("preferred_date_time")
-            if (extracted.location == null) missing.add("location")
+            if (extracted.location == null) missing.add("branch_preference")
         }
         if (vertical == "training") {
             if (extracted.serviceName == null) missing.add("course_name")

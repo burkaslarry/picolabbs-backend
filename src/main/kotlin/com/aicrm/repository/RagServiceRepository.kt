@@ -4,7 +4,6 @@ import com.aicrm.domain.RagService
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
-import java.time.Instant
 
 @Repository
 class RagServiceRepository(private val jdbc: JdbcTemplate) {
@@ -36,9 +35,17 @@ class RagServiceRepository(private val jdbc: JdbcTemplate) {
 
     fun insert(s: RagService) {
         jdbc.update(
-            "INSERT INTO aicrm_picolabbs_rag_services (id, name, description, region) VALUES (?, ?, ?, ?)",
-            s.id, s.name, s.description, s.region
+            "INSERT INTO aicrm_picolabbs_rag_services (id, name, description, region, category) VALUES (?, ?, ?, ?, ?)",
+            s.id, s.name, s.description, s.region, s.category
         )
+    }
+
+    fun updateCategoryName(oldName: String, newName: String) {
+        jdbc.update("UPDATE aicrm_picolabbs_rag_services SET category = ? WHERE category = ?", newName, oldName)
+    }
+
+    fun deleteByCategory(categoryName: String) {
+        jdbc.update("DELETE FROM aicrm_picolabbs_rag_services WHERE category = ?", categoryName)
     }
 
     fun deleteAll() {
@@ -51,6 +58,7 @@ class RagServiceRepository(private val jdbc: JdbcTemplate) {
             name = rs.getString("name"),
             description = rs.getString("description"),
             region = rs.getString("region"),
+            category = rs.getString("category"),
             createdAt = rs.getTimestamp("created_at").toInstant()
         )
     }

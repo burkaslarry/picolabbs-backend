@@ -1,0 +1,67 @@
+2026-04-26 19:19:57.244766+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_AUTOMATION_RULES" not found; SQL statement:
+SELECT COUNT(*) FROM aicrm_picolabbs_automation_rules [42102-224]
+2026-04-26 19:23:29.327580+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]
+2026-04-26 19:23:30.410919+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]
+2026-04-26 19:23:32.077889+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]
+2026-04-26 19:23:32.644286+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]
+2026-04-26 19:23:33.244519+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]
+2026-04-26 19:23:34.012370+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]
+2026-04-26 19:23:42.575981+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]
+2026-04-26 19:23:43.338082+08:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Table "AICRM_PICOLABBS_LOGIN" not found; SQL statement:
+SELECT l.id, l.username, l.fullname, u.email, u.role, u.user_role, u.permission, u.function
+FROM public.aicrm_picolabbs_login l
+JOIN public.aicrm_picolabbs_user u ON l.id = u.id
+WHERE l.username = ? 
+  AND l.password_hash = crypt(?, l.password_hash) 
+  AND l.is_active = true [42102-224]

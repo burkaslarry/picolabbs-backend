@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS aicrm_picolabbs_rag_services (
     name VARCHAR(500) NOT NULL,
     description TEXT,
     region VARCHAR(10) NOT NULL DEFAULT 'hk',
+    category VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS aicrm_picolabbs_rag_products (
@@ -96,6 +97,7 @@ CREATE TABLE IF NOT EXISTS aicrm_picolabbs_rag_products (
     name VARCHAR(500) NOT NULL,
     description TEXT,
     region VARCHAR(10) NOT NULL DEFAULT 'hk',
+    category VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_rag_services_region ON aicrm_picolabbs_rag_services(region);
@@ -138,7 +140,7 @@ CREATE TABLE IF NOT EXISTS aicrm_picolabbs_user (
     id VARCHAR(36) PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255),
-    role VARCHAR(20) NOT NULL DEFAULT 'operator',
+    role VARCHAR(32) NOT NULL DEFAULT 'ops_front',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_users_role ON aicrm_picolabbs_user(role);

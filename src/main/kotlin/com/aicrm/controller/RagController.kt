@@ -82,6 +82,7 @@ class RagController(
         val nameIdx = header.indexOfFirst { it == "name" || it == "名稱" }
         val descIdx = header.indexOfFirst { it == "description" || it == "desc" || it == "描述" }
         val regionIdx = header.indexOfFirst { it == "region" || it == "地區" }
+        val categoryIdx = header.indexOfFirst { it == "category" || it == "大類" || it == "分類" }
         if (nameIdx < 0) return ResponseEntity.badRequest().body(mapOf("error" to "CSV must have a 'name' column"))
         var imported = 0
         for (i in 1 until rows.size) {
@@ -90,12 +91,20 @@ class RagController(
             if (nameVal.isNullOrBlank()) continue
             val name = nameVal
             val description = if (descIdx >= 0 && descIdx < row.size) row[descIdx].trim().take(5000) else null
+            val category = if (categoryIdx >= 0 && categoryIdx < row.size) row[categoryIdx].trim().take(255) else null
             val region = when {
                 regionIdx >= 0 && regionIdx < row.size -> normalizeRegion(row[regionIdx].trim())
                 else -> "hk"
             }
             ragServiceRepository.insert(
-                RagService(id = uuid(), name = name.take(500), description = description?.ifBlank { null }, region = region, createdAt = Instant.now())
+                RagService(
+                    id = uuid(),
+                    name = name.take(500),
+                    description = description?.ifBlank { null },
+                    region = region,
+                    category = category?.ifBlank { null },
+                    createdAt = Instant.now()
+                )
             )
             imported++
         }
@@ -298,6 +307,7 @@ class RagController(
         "name" to s.name,
         "description" to s.description,
         "region" to s.region,
+        "category" to s.category,
         "created_at" to s.createdAt.toString()
     )
 
@@ -406,12 +416,14 @@ class RagController(
         val oldName = body["oldName"]?.toString()?.trim() ?: return ResponseEntity.badRequest().body(mapOf("error" to "Missing oldName"))
         val newName = body["newName"]?.toString()?.trim() ?: return ResponseEntity.badRequest().body(mapOf("error" to "Missing newName"))
         ragProductRepository.updateCategoryName(oldName, newName)
+        ragServiceRepository.updateCategoryName(oldName, newName)
         return ResponseEntity.ok(mapOf("ok" to true))
     }
 
     @DeleteMapping("/categories/{name}")
     fun deleteCategory(@PathVariable name: String): ResponseEntity<Any> {
         ragProductRepository.deleteCategory(name)
+        ragServiceRepository.deleteByCategory(name)
         return ResponseEntity.ok(mapOf("ok" to true))
     }
 
