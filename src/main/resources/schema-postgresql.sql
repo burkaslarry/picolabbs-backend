@@ -100,8 +100,37 @@ CREATE TABLE IF NOT EXISTS aicrm_picolabbs_rag_products (
     category VARCHAR(255),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS aicrm_picolabbs_rag_category (
+    code VARCHAR(255) PRIMARY KEY,
+    display_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS idx_rag_services_region ON aicrm_picolabbs_rag_services(region);
 CREATE INDEX IF NOT EXISTS idx_rag_products_region ON aicrm_picolabbs_rag_products(region);
+CREATE INDEX IF NOT EXISTS idx_rag_category_display_name ON aicrm_picolabbs_rag_category(display_name);
+
+CREATE TABLE IF NOT EXISTS aicrm_picolabbs_branches (
+    id VARCHAR(64) PRIMARY KEY,
+    code VARCHAR(64) UNIQUE,
+    name VARCHAR(255),
+    district VARCHAR(255),
+    address TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    region VARCHAR(10) NOT NULL DEFAULT 'hk',
+    name_zh VARCHAR(255),
+    name_en VARCHAR(255),
+    district_zh VARCHAR(255),
+    district_en VARCHAR(255),
+    address_zh VARCHAR(1000),
+    address_en VARCHAR(1000),
+    phone VARCHAR(64),
+    whatsapp VARCHAR(64),
+    hours_zh VARCHAR(255),
+    hours_en VARCHAR(255),
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_branches_region ON aicrm_picolabbs_branches(region);
 
 CREATE TABLE IF NOT EXISTS aicrm_picolabbs_follow_up_cases (
     id VARCHAR(36) PRIMARY KEY,

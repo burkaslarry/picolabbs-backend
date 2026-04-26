@@ -212,6 +212,7 @@ class SeedRunner(
                 stage = s.stage,
                 ownerId = null,
                 vertical = s.vertical,
+                verticalDisplayName = null,
                 source = "picolabbs_demo",
                 serviceDate = null
             )

@@ -10,6 +10,8 @@ import com.aicrm.domain.validateChannel
 import com.aicrm.domain.validateISODate
 import com.aicrm.domain.validateStage
 import com.aicrm.repository.FollowUpCaseRepository
+import com.aicrm.repository.BranchRepository
+import com.aicrm.repository.RagCategoryRepository
 import com.aicrm.repository.LeadRepository
 import com.aicrm.repository.RagDocumentRepository
 import com.aicrm.repository.RagProductRepository
@@ -36,8 +38,10 @@ import org.springframework.http.MediaType
 @RequestMapping("/api/rag")
 @RestController
 class RagController(
+    private val branchRepository: BranchRepository,
     private val ragServiceRepository: RagServiceRepository,
     private val ragProductRepository: RagProductRepository,
+    private val ragCategoryRepository: RagCategoryRepository,
     private val leadRepository: LeadRepository,
     private val followUpCaseRepository: FollowUpCaseRepository,
     private val ragDocumentRepository: RagDocumentRepository
@@ -50,6 +54,22 @@ class RagController(
     @GetMapping("/products")
     fun listProducts(@RequestParam(required = false) region: String?): List<Map<String, Any?>> =
         ragProductRepository.findAll(region).map { toProductMap(it) }
+
+    @GetMapping("/categories")
+    fun listCategories(): List<Map<String, Any?>> =
+        ragCategoryRepository.findAll().map {
+            mapOf(
+                "code" to it.code,
+                "display_name" to it.displayName,
+                "created_at" to it.createdAt.toString()
+            )
+        }
+
+    @GetMapping("/branches")
+    fun listBranches(@RequestParam(required = false) region: String?): List<Map<String, Any?>> {
+        val normalizedRegion = region?.let { normalizeRegion(it) }
+        return branchRepository.findAll(normalizedRegion)
+    }
 
     @GetMapping("/services/search")
     fun searchServices(
@@ -71,7 +91,7 @@ class RagController(
 
     @GetMapping("/follow-up-cases")
     fun listFollowUpCases(): List<Map<String, Any?>> =
-        followUpCaseRepository.findAll().take(300).map { toCaseMap(it) }
+        followUpCaseRepository.findAll().take(300).mapIndexed { index, c -> toCaseMap(c, index + 1) }
 
     @PostMapping("/services/import")
     fun importServicesCsv(@RequestParam("file") file: MultipartFile): ResponseEntity<Any> {
@@ -103,6 +123,7 @@ class RagController(
                     description = description?.ifBlank { null },
                     region = region,
                     category = category?.ifBlank { null },
+                    categoryDisplayName = null,
                     createdAt = Instant.now()
                 )
             )
@@ -135,7 +156,15 @@ class RagController(
                 else -> "hk"
             }
             ragProductRepository.insert(
-                RagProduct(id = uuid(), name = name.take(500), description = description?.ifBlank { null }, region = region, category = category?.ifBlank { null }, createdAt = Instant.now())
+                RagProduct(
+                    id = uuid(),
+                    name = name.take(500),
+                    description = description?.ifBlank { null },
+                    region = region,
+                    category = category?.ifBlank { null },
+                    categoryDisplayName = null,
+                    createdAt = Instant.now()
+                )
             )
             imported++
         }
@@ -175,6 +204,7 @@ class RagController(
                 stage = validateStage(row.getOrNull(stageIdx)?.trim()) ?: "New",
                 ownerId = null,
                 vertical = row.getOrNull(verticalIdx)?.trim()?.ifBlank { null }?.take(50),
+                verticalDisplayName = null,
                 source = row.getOrNull(sourceIdx)?.trim()?.ifBlank { null }?.take(255),
                 serviceDate = validateISODate(row.getOrNull(serviceDateIdx)?.trim())
             )
@@ -308,6 +338,7 @@ class RagController(
         "description" to s.description,
         "region" to s.region,
         "category" to s.category,
+        "category_display_name" to s.categoryDisplayName,
         "created_at" to s.createdAt.toString()
     )
 
@@ -317,6 +348,7 @@ class RagController(
         "description" to p.description,
         "region" to p.region,
         "category" to p.category,
+        "category_display_name" to p.categoryDisplayName,
         "created_at" to p.createdAt.toString()
     )
 
@@ -328,12 +360,14 @@ class RagController(
         "contact" to lead.contact,
         "stage" to lead.stage,
         "vertical" to lead.vertical,
+        "vertical_display_name" to lead.verticalDisplayName,
         "source" to lead.source,
         "service_date" to lead.serviceDate,
         "created_at" to lead.createdAt.toString()
     )
 
-    private fun toCaseMap(c: FollowUpCase) = mapOf(
+    private fun toCaseMap(c: FollowUpCase, caseNo: Int) = mapOf(
+        "case_no" to caseNo,
         "id" to c.id,
         "case_name" to c.caseName,
         "contact" to c.contact,
@@ -390,7 +424,15 @@ class RagController(
         val description = body["description"]?.toString()?.trim()?.ifBlank { null }
         val region = normalizeRegion(body["region"]?.toString() ?: "hk")
         val category = body["category"]?.toString()?.trim()?.ifBlank { null }
-        val product = RagProduct(id = uuid(), name = name.take(500), description = description?.take(5000), region = region, category = category?.take(255), createdAt = Instant.now())
+        val product = RagProduct(
+            id = uuid(),
+            name = name.take(500),
+            description = description?.take(5000),
+            region = region,
+            category = category?.take(255),
+            categoryDisplayName = null,
+            createdAt = Instant.now()
+        )
         ragProductRepository.insert(product)
         return ResponseEntity.ok(toProductMap(product))
     }
@@ -413,10 +455,20 @@ class RagController(
 
     @PutMapping("/categories")
     fun updateCategory(@RequestBody body: Map<String, Any?>): ResponseEntity<Any> {
-        val oldName = body["oldName"]?.toString()?.trim() ?: return ResponseEntity.badRequest().body(mapOf("error" to "Missing oldName"))
-        val newName = body["newName"]?.toString()?.trim() ?: return ResponseEntity.badRequest().body(mapOf("error" to "Missing newName"))
-        ragProductRepository.updateCategoryName(oldName, newName)
-        ragServiceRepository.updateCategoryName(oldName, newName)
+        val code = body["code"]?.toString()?.trim() ?: body["newName"]?.toString()?.trim()
+        val oldCode = body["oldCode"]?.toString()?.trim() ?: body["oldName"]?.toString()?.trim()
+        if (code.isNullOrBlank()) return ResponseEntity.badRequest().body(mapOf("error" to "Missing code"))
+        val displayName = (body["displayName"]?.toString()?.trim()
+            ?: body["display_name"]?.toString()?.trim()
+            ?: code).trim()
+        if (displayName.isBlank()) return ResponseEntity.badRequest().body(mapOf("error" to "Missing displayName"))
+        if (!oldCode.isNullOrBlank() && oldCode != code) {
+            ragProductRepository.updateCategoryName(oldCode, code)
+            ragServiceRepository.updateCategoryName(oldCode, code)
+            ragCategoryRepository.renameCode(oldCode, code, displayName)
+        } else {
+            ragCategoryRepository.upsert(code, displayName)
+        }
         return ResponseEntity.ok(mapOf("ok" to true))
     }
 
@@ -424,6 +476,7 @@ class RagController(
     fun deleteCategory(@PathVariable name: String): ResponseEntity<Any> {
         ragProductRepository.deleteCategory(name)
         ragServiceRepository.deleteByCategory(name)
+        ragCategoryRepository.deleteByCode(name)
         return ResponseEntity.ok(mapOf("ok" to true))
     }
 

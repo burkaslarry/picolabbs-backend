@@ -10,7 +10,7 @@ val ALLOWED_STAGES = setOf(
 
 val ALLOWED_CHANNELS = setOf("web", "whatsapp", "shopline")
 
-private val UUID_REGEX = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-fy]{4}-[0-9a-f]{12}$", RegexOption.IGNORE_CASE)
+private val LEAD_ID_REGEX = Regex("^[A-Za-z0-9_-]{1,64}$")
 
 fun sanitizeString(value: Any?, maxLen: Int = MAX_TEXT): String? {
     if (value == null) return null
@@ -19,7 +19,7 @@ fun sanitizeString(value: Any?, maxLen: Int = MAX_TEXT): String? {
 }
 
 fun isValidLeadId(id: String?): Boolean =
-    id != null && id.length <= MAX_ID && UUID_REGEX.matches(id)
+    id != null && id.length <= MAX_ID && LEAD_ID_REGEX.matches(id)
 
 fun validateStage(stage: String?): String? {
     val s = sanitizeString(stage, 50)

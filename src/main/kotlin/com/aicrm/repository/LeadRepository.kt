@@ -23,23 +23,41 @@ class LeadRepository(
     fun findAll(channel: String? = null, stage: String? = null): List<Lead> {
         return when {
             channel != null && stage != null -> jdbc.query(
-                "SELECT * FROM aicrm_picolabbs_leads WHERE channel = ? AND stage = ? ORDER BY created_at DESC",
+                """SELECT l.*, c.display_name AS vertical_display_name
+                   FROM aicrm_picolabbs_leads l
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = l.vertical
+                   WHERE l.channel = ? AND l.stage = ? ORDER BY l.created_at DESC""",
                 leadRowMapper, channel, stage
             )
             channel != null -> jdbc.query(
-                "SELECT * FROM aicrm_picolabbs_leads WHERE channel = ? ORDER BY created_at DESC",
+                """SELECT l.*, c.display_name AS vertical_display_name
+                   FROM aicrm_picolabbs_leads l
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = l.vertical
+                   WHERE l.channel = ? ORDER BY l.created_at DESC""",
                 leadRowMapper, channel
             )
             stage != null -> jdbc.query(
-                "SELECT * FROM aicrm_picolabbs_leads WHERE stage = ? ORDER BY created_at DESC",
+                """SELECT l.*, c.display_name AS vertical_display_name
+                   FROM aicrm_picolabbs_leads l
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = l.vertical
+                   WHERE l.stage = ? ORDER BY l.created_at DESC""",
                 leadRowMapper, stage
             )
-            else -> jdbc.query("SELECT * FROM aicrm_picolabbs_leads ORDER BY created_at DESC", leadRowMapper)
+            else -> jdbc.query(
+                """SELECT l.*, c.display_name AS vertical_display_name
+                   FROM aicrm_picolabbs_leads l
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = l.vertical
+                   ORDER BY l.created_at DESC""",
+                leadRowMapper
+            )
         }
     }
 
     fun findById(id: String): Lead? = jdbc.query(
-        "SELECT * FROM aicrm_picolabbs_leads WHERE id = ?",
+        """SELECT l.*, c.display_name AS vertical_display_name
+           FROM aicrm_picolabbs_leads l
+           LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = l.vertical
+           WHERE l.id = ?""",
         leadRowMapper, id
     ).firstOrNull()
 
@@ -177,6 +195,7 @@ class LeadRepository(
             stage = rs.getString("stage"),
             ownerId = rs.getString("owner_id"),
             vertical = rs.getString("vertical"),
+            verticalDisplayName = rs.getString("vertical_display_name"),
             source = rs.getString("source"),
             serviceDate = rs.getString("service_date")
         )

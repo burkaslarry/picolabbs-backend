@@ -13,6 +13,7 @@ data class Lead(
     val stage: String,
     val ownerId: String?,
     val vertical: String?,
+    val verticalDisplayName: String?,
     val source: String?,
     val serviceDate: String?
 )

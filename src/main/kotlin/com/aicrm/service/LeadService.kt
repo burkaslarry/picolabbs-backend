@@ -33,6 +33,7 @@ class LeadService(
             stage = "New",
             ownerId = null,
             vertical = req.vertical,
+            verticalDisplayName = null,
             source = req.source,
             serviceDate = null
         )
@@ -62,6 +63,7 @@ class LeadService(
             stage = "New",
             ownerId = null,
             vertical = null,
+            verticalDisplayName = null,
             source = null,
             serviceDate = null
         )

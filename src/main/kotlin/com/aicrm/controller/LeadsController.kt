@@ -113,6 +113,7 @@ class LeadsController(
         "stage" to lead.stage,
         "owner_id" to lead.ownerId,
         "vertical" to lead.vertical,
+        "vertical_display_name" to lead.verticalDisplayName,
         "source" to lead.source,
         "service_date" to lead.serviceDate
     )

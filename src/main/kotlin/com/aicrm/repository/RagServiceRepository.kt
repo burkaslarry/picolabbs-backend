@@ -10,23 +10,43 @@ class RagServiceRepository(private val jdbc: JdbcTemplate) {
 
     fun findAll(region: String? = null): List<RagService> =
         if (region != null) {
-            jdbc.query("SELECT * FROM aicrm_picolabbs_rag_services WHERE region = ? ORDER BY created_at DESC", rowMapper, region)
+            jdbc.query(
+                """SELECT s.*, c.display_name AS category_display_name
+                   FROM aicrm_picolabbs_rag_services s
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = s.category
+                   WHERE s.region = ? ORDER BY s.created_at DESC""",
+                rowMapper, region
+            )
         } else {
-            jdbc.query("SELECT * FROM aicrm_picolabbs_rag_services ORDER BY created_at DESC", rowMapper)
+            jdbc.query(
+                """SELECT s.*, c.display_name AS category_display_name
+                   FROM aicrm_picolabbs_rag_services s
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = s.category
+                   ORDER BY s.created_at DESC""",
+                rowMapper
+            )
         }
 
     fun searchByRegionAndKeyword(region: String?, keyword: String?): List<RagService> {
         val k = keyword?.let { "%${it.lowercase()}%" }
         if (region != null && k != null) {
             return jdbc.query(
-                "SELECT * FROM aicrm_picolabbs_rag_services WHERE region = ? AND (LOWER(name) LIKE LOWER(?) OR LOWER(COALESCE(description,'')) LIKE LOWER(?)) ORDER BY created_at DESC",
+                """SELECT s.*, c.display_name AS category_display_name
+                   FROM aicrm_picolabbs_rag_services s
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = s.category
+                   WHERE s.region = ? AND (LOWER(s.name) LIKE LOWER(?) OR LOWER(COALESCE(s.description,'')) LIKE LOWER(?))
+                   ORDER BY s.created_at DESC""",
                 rowMapper, region, "%$keyword%", "%$keyword%"
             )
         }
         if (region != null) return findAll(region)
         if (k != null) {
             return jdbc.query(
-                "SELECT * FROM aicrm_picolabbs_rag_services WHERE LOWER(name) LIKE LOWER(?) OR LOWER(COALESCE(description,'')) LIKE LOWER(?) ORDER BY created_at DESC",
+                """SELECT s.*, c.display_name AS category_display_name
+                   FROM aicrm_picolabbs_rag_services s
+                   LEFT JOIN aicrm_picolabbs_rag_category c ON c.code = s.category
+                   WHERE LOWER(s.name) LIKE LOWER(?) OR LOWER(COALESCE(s.description,'')) LIKE LOWER(?)
+                   ORDER BY s.created_at DESC""",
                 rowMapper, "%$keyword%", "%$keyword%"
             )
         }
@@ -59,6 +79,7 @@ class RagServiceRepository(private val jdbc: JdbcTemplate) {
             description = rs.getString("description"),
             region = rs.getString("region"),
             category = rs.getString("category"),
+            categoryDisplayName = rs.getString("category_display_name"),
             createdAt = rs.getTimestamp("created_at").toInstant()
         )
     }

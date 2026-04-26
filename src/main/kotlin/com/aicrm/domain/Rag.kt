@@ -9,6 +9,7 @@ data class RagService(
     val region: String,
     /** Same slug as [Lead.vertical] when triage matches this row (e.g. picolabbs_wellness). */
     val category: String?,
+    val categoryDisplayName: String?,
     val createdAt: Instant
 )
 
@@ -18,6 +19,13 @@ data class RagProduct(
     val description: String?,
     val region: String,
     val category: String?,
+    val categoryDisplayName: String?,
+    val createdAt: Instant
+)
+
+data class RagCategory(
+    val code: String,
+    val displayName: String,
     val createdAt: Instant
 )
 
