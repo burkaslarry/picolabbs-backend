@@ -1,55 +1,81 @@
-# DatabaseSerial
+# PicoLabbs AI CRM API — Kotlin Spring Boot
 
-This project is aimed at testing Kafka integration and performing SQL inserts using Rust.
+Backend for PicoLabbs CRM, connecting to remote PostgreSQL.
 
-## Setup
+## Table Structure
 
-To set up the Rust project and run the Kafka SQL tests, follow these steps:
+All tables are prefixed with `aicrm_picolabbs_` to prevent clashes in a shared database:
+- `aicrm_picolabbs_leads`
+- `aicrm_picolabbs_ai_triage`
+- `aicrm_picolabbs_automation_rules`
+- `aicrm_picolabbs_follow_up_cases`
+- `aicrm_picolabbs_rag_document_links`
+- `aicrm_picolabbs_rag_documents`
+- `aicrm_picolabbs_rag_products`
+- `aicrm_picolabbs_rag_services`
+- `aicrm_picolabbs_scheduled_jobs`
+- `aicrm_picolabbs_slot_suggestions`
+- `aicrm_picolabbs_tasks`
+- `aicrm_picolabbs_timeline`
+- `aicrm_picolabbs_user`
+- `aicrm_picolabbs_login`
 
-1. Install Rust: Visit the official Rust website at [rust-lang.org](https://www.rust-lang.org/) and follow the instructions to install Rust on your system.
+## Build and run locally
 
-2. Clone the Repository: Clone the project repository from GitHub by running the following command in your terminal or command prompt:
+```bash
+./gradlew bootRun
+```
 
-   ````
-   git clone https://github.com/burkaslarry/DatabaseSerial.git
-   ```
+API: http://localhost:3001. Health: http://localhost:3001/api/health.
 
-3. Navigate to the Project Directory: Change your working directory to the cloned repository:
+## Build JAR
 
-   ````
-   cd DatabaseSerial
-   ```
+```bash
+./gradlew bootJar
+# JAR: build/libs/ai-crm-api-1.0.0.jar
+java -jar build/libs/ai-crm-api-1.0.0.jar
+```
 
-4. Build the Project: Build the Rust project using Cargo, the Rust package manager, by running the following command:
+## Docker
 
-   ````
-   cargo build
-   ```
+```bash
+docker build -t ai-crm-api .
+docker run -p 3001:3001 -e PORT=3001 ai-crm-api
+```
 
-5. Configure Kafka: Set up a Kafka cluster or use an existing Kafka instance for testing. Make sure to note down the necessary configuration details, such as the Kafka broker addresses and topic names.
+Data is stored in `./data/crm` inside the container (ephemeral unless you mount a volume).
 
-6. Update Configuration: Open the project's configuration file (`config.toml`) and update the Kafka-related settings with the appropriate values, including the broker addresses and topic names.
+## Deploy on Render
 
-7. Run the Tests: Execute the Kafka SQL tests by running the following command:
+The app uses the `render` Spring profile and expects **DATABASE_URL** (Postgres `postgres://...` URL).
 
-   ````
-   cargo test
-   ```
+- **If you use the root repo Blueprint** (`render.yaml`): the web service is linked to database `ai-crm-db` and Render sets DATABASE_URL automatically.
+- **If you use your own database:** set **DATABASE_URL** in the web service environment: Render Dashboard → **Web Services** → **ai-crm-backend** → **Environment** → add **DATABASE_URL** with the connection string from your database’s **Connect** tab (Internal or External URL).
 
-   This command will run the test suite and validate the integration of Kafka and SQL inserts in the Rust project.
+If DATABASE_URL is missing, the app fails at startup with a message pointing to this setup.
 
-8. Analyze the Results: Once the tests complete, review the output to ensure that the Kafka integration and SQL inserts are functioning as expected.
+## API
 
-## Contributing
+- `GET /api/health` — health check
+- `GET /api/leads` — list leads (optional `?channel=web|whatsapp`, `?stage=...`)
+- `GET /api/leads/:id` — lead detail with triage, tasks, timeline, slot_suggestions
+- `POST /api/leads` — create lead (web form); body: `raw_message`, `channel`, `name`, `contact`, etc.
+- `PATCH /api/leads/:id` — update `stage`, `owner_id`, `service_date`
+- `POST /api/leads/:id/slots` — save slot suggestions; body: `{ "slots": ["...", ...] }`
+- `POST /api/leads/:id/tasks/:taskId/complete` — mark task complete
+- `POST /api/inquiries` — WhatsApp paste; body: `message`, `contact`
+- `POST /api/ai/triage` — run triage; body: `rawMessage` or `leadId`
+- `POST /api/ai/draft` — get WhatsApp draft; body: `vertical`, `intent`, `name`, `service`, `slots`, etc.
+- `GET /api/automations/rules` — list automation rules
+- `POST /api/automations/rules/seed` — seed default rules
+- `POST /api/automations/apply/:leadId` — apply automations for a lead
+- `POST /api/automations/process-scheduled` — process due scheduled jobs
+- `GET /api/automations/scheduled-jobs` — list scheduled jobs (`?status=pending` optional)
 
-If you would like to contribute to this project, please follow the guidelines outlined in the project's CONTRIBUTING.md file. Contributions, bug reports, and feature requests are welcome.
+## Seed
 
-## License
+On first start, if there are no automation rules, the app seeds default rules and 5 sample leads. No separate seed command needed.
 
-This project is licensed under the [MIT License](LICENSE). Please refer to the LICENSE file for more details.
+## Tech
 
-## Contact
-
-For any questions or inquiries regarding this project, please contact me via Issues or my social handles:
-
-We appreciate your interest and contributions to this Kafka SQL Rust project. Happy coding!
+- Kotlin 1.9, Spring Boot 3.2, Spring JDBC, H2 (file), Jackson (snake_case JSON).
