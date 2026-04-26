@@ -19,11 +19,14 @@ class NormalizationService {
     private val locationKeywordsEn = listOf(
         "central", "kowloon", "mong kok", "tst", "tsim sha tsui", "causeway bay", "wan chai",
         "sheung wan", "austin road", "shatin", "sha tin", "tuen mun", "yuen long", "tai po", "fanling",
-        "kwai fong", "tseung kwan o", "sai kung"
+        "kwai fong", "tseung kwan o", "sai kung", "quarry bay", "diamond hill", "kowloon bay",
+        "tsuen wan", "moko", "times square", "plaza hollywood", "telford plaza", "new town plaza",
+        "tuen mun town plaza", "popcorn"
     )
     private val locationKeywordsZh = listOf(
         "中環", "尖沙咀", "旺角", "銅鑼灣", "灣仔", "上環", "柯士甸", "沙田", "屯門", "元朗", "大埔", "粉嶺",
-        "葵芳", "將軍澳", "西貢", "九龍", "港島", "新界"
+        "葵芳", "將軍澳", "西貢", "九龍", "港島", "新界", "鰂魚涌", "康怡", "鑽石山", "荷里活廣場",
+        "九龍灣", "德福", "荃灣", "荃灣廣場", "新世紀廣場", "時代廣場", "屯門市廣場", "唐賢街"
     )
 
     fun normalizeFields(text: String, vertical: String): ExtractedFields {
