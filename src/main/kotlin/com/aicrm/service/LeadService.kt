@@ -42,7 +42,7 @@ class LeadService(
         val triageResult = triageService.runTriage(req.raw_message, id)
         val aiTriage = triageService.toAiTriage(id, triageResult)
         leadRepository.insertOrReplaceTriage(aiTriage)
-        leadRepository.updateVertical(id, triageResult.vertical)
+        leadRepository.updateVertical(id, req.vertical ?: triageResult.vertical)
         automationEngineService.applyAutomations(id)
         val updatedLead = leadRepository.findById(id)!!
         val triage = leadRepository.getTriage(id)
@@ -79,7 +79,18 @@ class LeadService(
     }
 
     fun patchLead(id: String, req: PatchLeadRequest): Lead {
-        if (req.stage != null) leadRepository.updateStage(id, req.stage)
+        val before = leadRepository.findById(id)
+        if (req.stage != null) {
+            leadRepository.updateStage(id, req.stage)
+            if (before != null && before.stage != req.stage) {
+                leadRepository.insertTimeline(
+                    uuid(),
+                    id,
+                    "stage_changed",
+                    objectMapper.writeValueAsString(mapOf("from" to before.stage, "to" to req.stage))
+                )
+            }
+        }
         if (req.owner_id != null) leadRepository.updateOwner(id, req.owner_id)
         if (req.service_date != null) {
             leadRepository.updateServiceDate(id, req.service_date)
