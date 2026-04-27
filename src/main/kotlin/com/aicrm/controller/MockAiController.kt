@@ -19,30 +19,27 @@ class MockAiController {
 
     private fun matchFixture(text: String, contactName: String): Map<String, Any?> {
         val t = text.lowercase()
-        val isZoe = contactName.contains("zoe", true) ||
-            listOf("小組", "small group", "pt", "whey", "supplement", "課", "堂", "fitness", "training").any { t.contains(it) }
-        val isPicolab = contactName.contains("picolab", true) ||
-            listOf("design", "scope", "timeline", "quote", "figma", "stack", "hosting", "maintenance", "invoice").any { t.contains(it) }
+        val isPico =
+            contactName.contains("pico", true) ||
+                listOf(
+                    "iwand", "irelief", "shield", "iknee", "picolabb", "門市", "分店", "取貨",
+                    "shopline", "母親節", "理療", "試用", "寵物", "狗狗", "膠原", "保健"
+                ).any { t.contains(it) } ||
+                listOf(
+                    "寵物", "門市", "取貨", "訂單", "iwand", "irelief", "母親節", "理療", "膠原"
+                ).any { text.contains(it) }
 
         return when {
-            isZoe && (t.contains("small group") || t.contains("小組")) -> zoeNewInquiry()
-            isZoe && (t.contains("whey") || t.contains("supplement") || t.contains("新貨")) -> zoeSupplement()
-            isZoe && (t.contains("改") || t.contains("reschedule") || t.contains("postpone")) -> zoeReschedule()
-            isZoe && (t.contains("online") || t.contains("zoom")) -> zoeOnline()
-            isZoe && (t.contains("pt") || t.contains("personal")) -> zoePt()
-            isZoe && (t.contains("corporate") || t.contains("company") || t.contains("公司")) -> zoeCorporate()
-            isZoe && (t.contains("擠") || t.contains("crowded") || t.contains("太多人")) -> zoeComplaint()
-            isZoe -> zoeGeneric()
+            !isPico -> generic()
 
-            isPicolab && (t.contains("quote") || t.contains("scope") || t.contains("budget")) -> picoQuote()
-            isPicolab && t.contains("timeline") -> picoTimeline()
-            isPicolab && (t.contains("stack") || t.contains("tech")) -> picoStack()
-            isPicolab && (t.contains("invoice") || t.contains("payment")) -> picoInvoice()
-            isPicolab && (t.contains("hosting") || t.contains("maintenance")) -> picoHosting()
-            isPicolab && (t.contains("delay") || t.contains("deadline") || t.contains("late")) -> picoDelay()
-            isPicolab -> picoGeneric()
-
-            else -> generic()
+            (t.contains("shopline") || t.contains("訂單") || t.contains("取貨")) -> picoPickup()
+            (t.contains("寵物") || t.contains("狗") || t.contains("貓") || t.contains("happy pet")) -> picoPet()
+            (t.contains("iwand") && (t.contains("分別") || t.contains("vs") || t.contains("pro"))) -> picoCompare()
+            (t.contains("投訴") || t.contains("壞") || t.contains("complaint") || t.contains("無效")) -> picoComplaint()
+            (t.contains("膠原") || t.contains("supplement") || t.contains("保健") || t.contains("維他命")) -> picoSupplements()
+            (t.contains("價") || t.contains("price") || t.contains("幾錢")) -> picoPrice()
+            (t.contains("預約") || t.contains("book") || t.contains("試用")) -> picoBook()
+            else -> picoGeneric()
         }
     }
 
@@ -66,97 +63,62 @@ class MockAiController {
         "follow_up" to mapOf("due_in_hours" to dueInHours, "note" to note)
     )
 
-    private fun zoeNewInquiry() = payload(
-        "New inquiry", "High", "新客問小組價格，轉化率高。", "問 fitness goal + 可用時段，再 offer free trial。",
-        "Hi 多謝你查詢，小組仲有 2 位，每堂 $380，4 堂 $1,400。你想減脂定力量？我可以幫你安排免費試堂。",
-        "Thanks for reaching out. We have 2 spots left: $380/class or 4 classes for $1,400. Are you focused on fat loss or strength? Happy to arrange a free trial.",
-        "Qualified", "有明確購買意圖，可入 Qualified。", 4, "4 小時未回覆就提醒一次。"
-    )
-    private fun zoeSupplement() = payload(
-        "Existing customer", "Medium", "舊客翻購 supplement。", "確認口味並 upsell shaker。",
-        "Whey 新貨到咗，chocolate / vanilla 都有，會員 9 折。你要邊隻？加 shaker 可免運費。",
-        "Whey is back in stock (chocolate/vanilla) with member discount. Which one would you like? Add a shaker for free shipping.",
-        null, "舊客補貨唔需要移動 pipeline。", 24, "24 小時後再追一次。"
-    )
-    private fun zoeReschedule() = payload(
-        "Existing customer", "Medium", "30 日內多次改期，需要柔性提醒。", "確認新時段並提示 24h 改期政策。",
-        "冇問題，幫你改到今晚 9pm。小提醒：之後盡量 24 小時前通知，方便我安排其他學員位置，今晚見！",
-        "No problem, moved to 9pm tonight. Friendly reminder to notify 24h ahead next time so I can manage other slots. See you tonight!",
-        null, "維持現 stage，標記 retention attention。", 2, "2 小時前自動提醒。"
-    )
-    private fun zoeOnline() = payload(
-        "New inquiry", "High", "遠程學員有高轉化潛力。", "介紹 online 方案並收集 timezone。",
-        "有 online！1-on-1 $480，online 小組 $280。你係邊個 timezone？每週想幾多堂？",
-        "Yes, we offer online plans: 1-on-1 at $480, group at $280. What's your timezone and preferred weekly frequency?",
-        "Qualified", "高意圖新客。", 6, "6 小時後提醒。"
-    )
-    private fun zoePt() = payload(
-        "Existing customer", "High", "舊客升級 PT，客單價高。", "報 3/5/10 堂 package。",
-        "Perfect，PT $680/堂；5 堂 $3,200；10 堂 $6,000。你下週邊日方便？我幫你鎖位。",
-        "Perfect. PT is $680/session, 5-pack $3,200, 10-pack $6,000. Which days next week work for you?",
-        "Proposal", "進入報價階段。", 8, "8 小時未回覆就 follow up。"
-    )
-    private fun zoeCorporate() = payload(
-        "New inquiry", "High", "企業 wellness 屬高價值 B2B。", "約 15 分鐘 discovery call。",
-        "多謝查詢！Corporate wellness 有月 4 堂 $12k、月 8 堂 $22k。可以約 15 分鐘了解公司規模嗎？",
-        "Thanks for your interest. Corporate wellness packages start at $12k/month. Can we schedule a 15-min discovery call?",
-        "Qualified", "高價值線索需優先跟進。", 2, "2 小時內再次提醒。"
-    )
-    private fun zoeComplaint() = payload(
-        "Complaint", "High", "體驗投訴需即時處理。", "道歉 + 補救行動 + 補堂方案。",
-        "真係唔好意思，今堂安排得唔夠好。我會預留固定位置，另外補返一堂 PT 畀你。你想邊日補？",
-        "Sincere apologies for today’s experience. I’ll reserve a fixed slot and offer a complimentary PT session. Which day works for your makeup?",
-        null, "保留 stage，標記 retention risk。", 1, "1 小時內跟進。"
-    )
-    private fun zoeGeneric() = payload(
-        "Existing customer", "Medium", "一般對話。", "友善回覆並了解需求。",
-        "收到你 message，多謝你！我想了解多啲你目標，先幫你安排最啱嘅方案。",
-        "Thanks for your message. Let me understand your goals first and I’ll suggest the best-fit plan.",
-        null, "N/A", 24, "24 小時 check-in。"
+    private fun picoPickup() = payload(
+        "Order / pickup", "High", "已付款或門市取貨相關，需盡快確認時間。", "核對訂單編號、分店及可取貨時段。",
+        "收到，我幫你核對 Shopline 訂單同門市庫存，稍後 WhatsApp 回覆你可取貨時間。",
+        "Thanks — I’ll verify your Shopline order and branch stock, then reply with pickup options.",
+        "Qualified", "有明確交易編號，可優先處理。", 4, "4 小時內回覆取貨安排。"
     )
 
-    private fun picoQuote() = payload(
-        "Quotation", "High", "新 B2B quote 入線。", "先做 3 條 qualifying question。",
-        "多謝查詢！我哋項目通常 $80k-$250k，想先了解目標客群、deadline 同 budget，方便安排 30 分鐘 call。",
-        "Thanks for reaching out. Our projects are typically $80k-$250k. Could you share target users, deadline, and budget before we schedule a 30-min call?",
-        "Qualified", "新客 + quote 意向。", 24, "24 小時 gentle nudge。"
+    private fun picoPet() = payload(
+        "Pet care", "Medium", "寵物關節／營養查詢，建議轉門市或產品同事。", "確認寵物體重、年齡及想改善嘅情況。",
+        "多謝查詢 PicoLabb 寵物系列。想了解下毛孩大約幾多歲、體重同而家行路情況，方便建議合適配方。",
+        "Thanks for asking about our pet line. Could you share your pet’s age, weight, and mobility so we can suggest a suitable formula?",
+        "Needs Info", "需補充寵物資料。", 24, "24 小時內 gentle follow-up。"
     )
-    private fun picoTimeline() = payload(
-        "Existing customer", "High", "現有 project 進度詢問。", "提供 milestone ETA + sync call。",
-        "Quick update：design system 同 homepage 已完成，今週五交 Figma。下個 milestone 係 product pages（4/29）。",
-        "Quick update: design system and homepage are complete, Figma will be shared this Friday. Next milestone is product pages (Apr 29).",
-        null, "保持現 stage。", 48, "48 小時內確認交付。"
+
+    private fun picoCompare() = payload(
+        "Product comparison", "Medium", "型號比較屬高意圖售前問題。", "用三點講清功能、保養與門市試用。",
+        "iWand 6 同 Pro 主要係強度模式同配件組合唔同；如果你想，我可以安排門市試用同教點用。",
+        "iWand 6 vs Pro mainly differ in modes and bundled accessories. I can arrange an in-store demo if helpful.",
+        "Qualified", "比較型號通常接近決策。", 12, "12 小時內跟進門市時段。"
     )
-    private fun picoStack() = payload(
-        "New inquiry", "Medium", "技術盡調，意向較高。", "說明 stack 並轉 architecture call。",
-        "我哋通常用 Next.js + Tailwind + headless CMS。重點係你 content flow，想唔想約 30 分鐘講 architecture？",
-        "Our default stack is Next.js + Tailwind + headless CMS. The key is your content flow—want a 30-min architecture call?",
-        "Qualified", "技術問題通常代表認真考慮。", 24, "24 小時約 call。"
+
+    private fun picoComplaint() = payload(
+        "Complaint", "High", "產品體驗問題需即時安撫同記錄。", "道歉、記錄批次／購買渠道、安排門市跟進。",
+        "真係唔好意思令你困擾。我想了解返購買日期同使用情況，會安排同事盡快同你跟進。",
+        "I’m sorry for the trouble. Please share purchase date and usage details so we can follow up quickly.",
+        null, "保留 stage，標記需主管留意。", 2, "2 小時內首次回覆。"
     )
-    private fun picoInvoice() = payload(
-        "Existing customer", "High", "涉及付款，需即時回覆。", "重發 invoice 並確認收件。",
-        "Invoice 已重發到你 email（NET 14），如果你想 FPS 付款我可以即刻補資料。",
-        "Invoice has been resent (NET 14). If you prefer FPS transfer, I can share details right away.",
-        null, "N/A", 4, "4 小時內確認對方已收。"
+
+    private fun picoSupplements() = payload(
+        "Supplements", "Medium", "保健品諮詢可連帶儀器套裝。", "確認服用習慣同是否有長期病患／藥物。",
+        "我哋有膠原肽飲同維他命系列，可配合居家理療一齊用。想問下有冇長期病患或正在服用藥物？",
+        "We have collagen drinks and vitamins that pair well with home devices. Any chronic conditions or medications we should know about?",
+        "Needs Info", "需安全相關資料。", 24, "24 小時內再跟進。"
     )
-    private fun picoHosting() = payload(
-        "New inquiry", "Medium", "維護方案屬 recurring revenue。", "提供 3-tier maintenance plan。",
-        "有 3 個 maintenance plan（Basic/Growth/Pro），可按你流量同開發需求建議最合適 tier。",
-        "We offer 3 maintenance tiers (Basic/Growth/Pro). I can recommend the best fit based on your traffic and dev needs.",
-        "Qualified", "可轉 recurring deal。", 24, "24 小時提供 comparison doc。"
+
+    private fun picoPrice() = payload(
+        "Pricing", "High", "價格查詢建議盡快給清晰區間。", "說明套裝／單品大致範圍並邀請到門市確認。",
+        "價錢會視乎套裝同門市推廣略有唔同，我整理最新報價表同優惠，稍後發你。",
+        "Pricing varies slightly by bundle and in-store promos — I’ll send the latest options shortly.",
+        "Qualified", "有購買意圖。", 6, "6 小時內發報價重點。"
     )
-    private fun picoDelay() = payload(
-        "Complaint", "High", "延期風險傷害信任。", "承認 + 新 ETA + 補償方案。",
-        "真係抱歉，我應該提早講。新 ETA 係本週五，另外我會免費加 3 個 landing page variants 畀你做 A/B test。",
-        "I’m sorry I should have flagged this earlier. New ETA is this Friday, and I’ll add 3 landing page variants for A/B testing at no extra cost.",
-        null, "保 stage，標記 retention risk。", 1, "1 小時內確認新計劃。"
+
+    private fun picoBook() = payload(
+        "Booking", "High", "試用／預約應鎖定分店與時段。", "提供 2–3 個門市時段選擇。",
+        "收到，想約邊區門市試用？我可以幫你睇今週下午／週末邊啲時段有位。",
+        "Got it — which branch works for you? I can suggest 2–3 slots this week.",
+        "Offered Slots", "可進入排程。", 8, "8 小時內確認時段。"
     )
+
     private fun picoGeneric() = payload(
-        "Existing customer", "Medium", "一般 project 對話。", "快速回覆並提出下一步。",
-        "收到，thanks！我整理好細節後即刻回覆你。",
-        "Noted, thanks! I’ll get back to you shortly with details.",
-        null, "N/A", 24, "24h check-in。"
+        "Product inquiry", "Medium", "一般 PicoLabb 產品查詢。", "了解產品、分店偏好同聯絡方式。",
+        "多謝聯絡 PicoLabb！想問你主要關心邊類產品（理療儀器／保健／寵物），同邊區門市最方便？",
+        "Thanks for contacting PicoLabb — which product line are you interested in (devices, wellness, pet), and which area is easiest for you?",
+        "New", "新查詢。", 24, "24 小時內回覆。"
     )
+
     private fun generic() = payload(
         "Other", "Low", "未能明確分類。", "建議人手 review。",
         "收到你嘅訊息，我會先幫你整理，稍後回覆你。",

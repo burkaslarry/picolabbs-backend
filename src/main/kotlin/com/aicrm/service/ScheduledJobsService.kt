@@ -2,7 +2,7 @@ package com.aicrm.service
 
 import com.aicrm.repository.LeadRepository
 import com.aicrm.repository.ScheduledJobRepository
-import com.aicrm.util.uuid
+import com.aicrm.util.nextRuntimeAuxId
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -27,7 +27,7 @@ class ScheduledJobsService(
             1 to "feedback_1d"
         ).forEach { (offset, jobType) ->
             val runAt = date.plusDays(offset.toLong()).atStartOfDay().format(formatter)
-            jobRepository.insert(uuid(), leadId, jobType, runAt, "pending")
+            jobRepository.insert(nextRuntimeAuxId(), leadId, jobType, runAt, "pending")
         }
     }
 
@@ -43,9 +43,9 @@ class ScheduledJobsService(
                 else -> "Scheduled: ${job.jobType}"
             }
             val runAtStr = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(job.runAt.atZone(java.time.ZoneId.systemDefault()).toLocalDateTime())
-            leadRepository.insertTask(uuid(), job.leadId, job.jobType, title, runAtStr)
+            leadRepository.insertTask(nextRuntimeAuxId(), job.leadId, job.jobType, title, runAtStr)
             leadRepository.insertTimeline(
-                uuid(), job.leadId, "scheduled_job_processed",
+                nextRuntimeAuxId(), job.leadId, "scheduled_job_processed",
                 """{"job_type":"${job.jobType}","run_at":"${job.runAt}"}"""
             )
             jobRepository.markDone(job.id)

@@ -24,20 +24,24 @@ class TriageService(
     private val ragVerticalMatcher: RagVerticalMatcher
 ) {
 
-    /** Zomate Fitness (zoesportdiary.com) — women-first gym, TST / Sheung Wan */
-    /** Order matters on equal keyword scores: PT before membership so 一對一+試堂 → PT */
+    /**
+     * PicoLabb-only keyword fallback when RAG catalog does not match a product name.
+     * Order: more specific categories first (pet, pain hardware) before broad wellness.
+     */
     private val verticalKeywords = linkedMapOf(
-        "zomate_nutrition" to listOf(
-            "生酮", "keto", "飲食", "餐廳", "營養", "健康飲食", "膳食", "減肥餐", "餐單"
+        "picolabbs_pet_care" to listOf(
+            "寵物", "狗狗", "貓貓", "happy pet", "pet care", "竉物", "毛孩", "狗關節", "貓關節"
         ),
-        "zomate_pt_1on1" to listOf(
-            "一對一", "私教", "私人教練", "personal trainer", "pt", "gym", "健身", "女教練", "女子健身",
-            "身形", "減脂", "增肌", "zomate", "器械", "教練", "運動", "workout", "fitness", "女健身",
-            "女子", "塑造", "理想身形", "課程", "中心"
+        "picolabbs_hardware_pain" to listOf(
+            "irelief", "iwand", "the shield", "shield pro", "止痛", "理療", "電療", "慢性痛", "關節痛",
+            "肌肉酸痛", "母親節", "套裝", "門市存貨", "現貨"
         ),
-        "zomate_membership_trial" to listOf(
-            "會員", "報名", "試堂", "體驗", "體驗課", "收費", "membership", "trial", "月費", "package",
-            "join", "火熱招聘", "成為", "成功榜樣"
+        "picolabbs_supplements" to listOf(
+            "保健品", "補充品", "膠原", "collagen", "維他命", "vitamin", "supplement", "健康補充"
+        ),
+        "picolabbs_wellness" to listOf(
+            "美容", "wellness", "beauty", "iknee", "試用", "體驗", "門市", "分店", "預約", "銅鑼灣",
+            "尖沙咀", "中環", "療程", "facial"
         )
     )
 
@@ -48,7 +52,10 @@ class TriageService(
         ),
         "price" to listOf("price", "cost", "fee", "價錢", "幾錢", "費用", "how much", "budget", "預算"),
         "info" to listOf("info", "information", "了解", "想知", "介紹", "what do you", "inquiry", "查詢"),
-        "complaint" to listOf("complaint", "problem", "issue", "redness", "swelling", "pain", "不適", "紅腫", "痛", "有問題", "what should i do"),
+        "complaint" to listOf(
+            "complaint", "problem", "issue", "redness", "swelling", "不適", "紅腫", "腫脹", "有問題",
+            "what should i do", "投訴", "壞咗", "無效", "受傷", "injury", "allergic reaction"
+        ),
         "reschedule" to listOf("reschedule", "change", "改期", "取消", "cancel", "postpone")
     )
 
@@ -118,7 +125,7 @@ class TriageService(
             }
             if (score > best.second) best = v to score
         }
-        return if (best.second > 0) best.first else "zomate_pt_1on1"
+        return if (best.second > 0) best.first else "picolabbs_wellness"
     }
 
     private fun detectIntent(text: String): String {
@@ -140,7 +147,7 @@ class TriageService(
         if (intent == "complaint") score = 90
         if (intent == "book") score += 15
         if (Regex("urgent|急|盡快|asap|within\\s*\\d+\\s*(day|week)", RegexOption.IGNORE_CASE).containsMatchIn(text)) score += 20
-        if (vertical.startsWith("zomate_") && Regex("急|urgent|盡快|asap").containsMatchIn(text)) score = maxOf(score, 85)
+        if (vertical.startsWith("picolabbs_") && Regex("急|urgent|盡快|asap").containsMatchIn(text)) score = maxOf(score, 85)
         return score.coerceIn(0, 100)
     }
 
@@ -167,7 +174,7 @@ class TriageService(
         if (safetyEscalate) actions.add("Escalate to manager / medical team")
         if (intent == "book") {
             actions.add("Offer 3 time slots")
-            if (vertical.startsWith("zomate_")) actions.add("Assign to front desk / coach team")
+            if (vertical.startsWith("picolabbs_")) actions.add("Assign to branch / sales team for booking")
         }
         if (intent == "price") actions.add("Send price list / quote")
         if (missing.isNotEmpty()) actions.add("Ask for top missing fields: ${missing.take(2).joinToString(", ")}")

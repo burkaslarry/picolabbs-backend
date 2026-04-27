@@ -10,7 +10,7 @@ import com.aicrm.domain.validateStage
 import com.aicrm.repository.LeadContactInsight
 import com.aicrm.repository.LeadRepository
 import com.aicrm.service.LeadService
-import com.aicrm.util.uuid
+import com.aicrm.util.nextRuntimeAuxId
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
@@ -91,10 +91,10 @@ class LeadsController(
         if (!isValidLeadId(id)) return ResponseEntity.badRequest().body(mapOf("error" to "Invalid lead id"))
         if (leadRepository.findById(id) == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Lead not found"))
         val slots = validateSlots(body["slots"])
-        val slotId = uuid()
+        val slotId = nextRuntimeAuxId()
         leadRepository.insertSlotSuggestion(slotId, id, com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(slots))
         leadRepository.updateStage(id, "Offered Slots")
-        leadRepository.insertTimeline(uuid(), id, "slots_offered", com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(mapOf("slots" to slots)))
+        leadRepository.insertTimeline(nextRuntimeAuxId(), id, "slots_offered", com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(mapOf("slots" to slots)))
         val slot = leadRepository.getLatestSlotSuggestion(id)!!
         return ResponseEntity.status(HttpStatus.CREATED).body(slotToMap(slot))
     }

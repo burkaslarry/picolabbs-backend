@@ -5,7 +5,6 @@ import com.aicrm.repository.AutomationRuleRepository
 import com.aicrm.repository.LeadRepository
 import com.aicrm.service.AutomationEngineService
 import com.aicrm.service.TriageService
-import com.aicrm.util.uuid
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
@@ -58,7 +57,7 @@ class SeedRunner(
                 "+852 9123 1003",
                 "Mr Lau",
                 "Paid/Deposit",
-                "picolabbs_hardware_beauty"
+                "picolabbs_hardware_pain"
             ),
             Sample(
                 "whatsapp",
@@ -66,7 +65,7 @@ class SeedRunner(
                 "+852 9123 1004",
                 "何先生",
                 "New",
-                "picolabbs_hardware_beauty"
+                "picolabbs_hardware_pain"
             ),
             Sample(
                 "web",
@@ -74,7 +73,7 @@ class SeedRunner(
                 "ho@example.com",
                 "陳太",
                 "Needs Info",
-                "picolabbs_services"
+                "picolabbs_wellness"
             ),
             Sample(
                 "whatsapp",
@@ -122,7 +121,7 @@ class SeedRunner(
                 "+852 9123 1009",
                 "阿明",
                 "New",
-                "picolabbs_services"
+                "picolabbs_wellness"
             ),
             Sample(
                 "shopline",
@@ -146,7 +145,7 @@ class SeedRunner(
                 "corp@example.com",
                 "HR May",
                 "Qualified",
-                "picolabbs_services"
+                "picolabbs_wellness"
             ),
             Sample(
                 "whatsapp",
@@ -170,7 +169,7 @@ class SeedRunner(
                 "+852 9123 1014",
                 "鄭先生",
                 "Booked",
-                "picolabbs_hardware_beauty"
+                "picolabbs_hardware_pain"
             ),
             Sample(
                 "whatsapp",
@@ -186,7 +185,7 @@ class SeedRunner(
                 "twship@example.com",
                 "Susan",
                 "Needs Info",
-                "picolabbs_services"
+                "picolabbs_wellness"
             ),
             Sample(
                 "whatsapp",
@@ -198,9 +197,19 @@ class SeedRunner(
             )
         )
         require(sampleInquiries.size == 20) { "Expected 20 PicoLabb demo leads" }
-        sampleInquiries.forEachIndexed { index, s ->
-            val id = uuid()
-            val now = Instant.now().minusSeconds((sampleInquiries.size - index) * 90L)
+        // Second inquiry from 何先生 — same contact as earlier sample for built-in 「熟客」 pairs in fresh DBs.
+        val inquiries = sampleInquiries.toMutableList()
+        inquiries[16] = inquiries[16].copy(
+            contact = "+852 9123 1004",
+            name = "何先生",
+            vertical = "picolabbs_supplements"
+        )
+        val leadIdBase = 100_001
+        val timelineIdBase = 890_000_001
+        inquiries.forEachIndexed { index, s ->
+            val id = "${leadIdBase + index}"
+            val timelineId = "${timelineIdBase + index}"
+            val now = Instant.now().minusSeconds((inquiries.size - index) * 90L)
             val lead = Lead(
                 id = id,
                 channel = s.channel,
@@ -217,7 +226,12 @@ class SeedRunner(
                 serviceDate = null
             )
             leadRepository.insert(lead)
-            leadRepository.insertTimeline(uuid(), id, if (s.channel == "web") "created" else if (s.channel == "shopline") "shopline_sync" else "whatsapp_paste", "{}")
+            leadRepository.insertTimeline(
+                timelineId,
+                id,
+                if (s.channel == "web") "created" else if (s.channel == "shopline") "shopline_sync" else "whatsapp_paste",
+                "{}"
+            )
             val triageResult = triageService.runTriage(s.raw, id)
             val aiTriage = triageService.toAiTriage(id, triageResult).copy(
                 vertical = s.vertical,
@@ -227,7 +241,7 @@ class SeedRunner(
             leadRepository.updateVertical(id, s.vertical)
             automationEngineService.applyAutomations(id)
         }
-        log.info("Seed done: PicoLabb demo — {} sample leads.", sampleInquiries.size)
+        log.info("Seed done: PicoLabb demo — {} sample leads.", inquiries.size)
     }
 
     private data class Sample(

@@ -3,8 +3,8 @@ package com.aicrm.service
 import com.aicrm.domain.AutomationRule
 import com.aicrm.repository.AutomationRuleRepository
 import com.aicrm.repository.LeadRepository
-import com.aicrm.util.uuid
 import com.fasterxml.jackson.databind.ObjectMapper
+import java.util.concurrent.atomic.AtomicLong
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
@@ -20,6 +20,11 @@ class AutomationEngineService(
     private val ruleRepository: AutomationRuleRepository,
     private val objectMapper: ObjectMapper
 ) {
+
+    /** Monotonic numeric string ids for automation-created tasks / timeline (no UUID). */
+    private val automationIdSeq = AtomicLong(9_520_000_001L)
+
+    private fun nextAutomationEntityId(): String = automationIdSeq.getAndIncrement().toString()
 
     fun getDefaultRules(): List<AutomationRule> = listOf(
         AutomationRule("rule-whatsapp-inquiry", "【前期】WhatsApp 產品查詢自動派單",
@@ -75,8 +80,8 @@ class AutomationEngineService(
                     "assign_owner" -> {
                         val valueByVertical = action["valueByVertical"] as? Map<*, *>
                         var owner = (valueByVertical?.get(vertical) ?: action["value"])?.toString()
-                        if (owner == null && vertical.startsWith("zomate_")) {
-                            owner = "zomate-front-desk"
+                        if (owner == null && vertical.startsWith("picolabbs_")) {
+                            owner = "90000000-0000-4000-8000-000000000102"
                         }
                         if (owner != null) {
                             newOwner = owner
@@ -89,14 +94,19 @@ class AutomationEngineService(
                         val title = action["title"]?.toString() ?: "Task"
                         val dueMin = (action["dueMinutes"] as? Number)?.toInt() ?: 15
                         val dueAt = LocalDateTime.now().plusMinutes(dueMin.toLong()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                        leadRepository.insertTask(uuid(), leadId, taskType, title, dueAt)
+                        leadRepository.insertTask(nextAutomationEntityId(), leadId, taskType, title, dueAt)
                         applied.add(AppliedAction(rule.name, "create_task", title = title))
                     }
                 }
             }
         }
 
-        leadRepository.insertTimeline(uuid(), leadId, "automations_applied", objectMapper.writeValueAsString(mapOf("applied" to applied)))
+        leadRepository.insertTimeline(
+            nextAutomationEntityId(),
+            leadId,
+            "automations_applied",
+            objectMapper.writeValueAsString(mapOf("applied" to applied))
+        )
         return ApplyResult(applied, newStage, newOwner)
     }
 }

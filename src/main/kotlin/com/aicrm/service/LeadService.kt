@@ -5,7 +5,8 @@ import com.aicrm.domain.CreateLeadRequest
 import com.aicrm.domain.Lead
 import com.aicrm.domain.PatchLeadRequest
 import com.aicrm.repository.LeadRepository
-import com.aicrm.util.uuid
+import com.aicrm.util.nextRuntimeAuxId
+import com.aicrm.util.nextRuntimeLeadId
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -20,7 +21,7 @@ class LeadService(
 ) {
 
     fun createLead(req: CreateLeadRequest): LeadWithTriageAndTasks {
-        val id = uuid()
+        val id = nextRuntimeLeadId()
         val now = Instant.now()
         val lead = Lead(
             id = id,
@@ -38,7 +39,7 @@ class LeadService(
             serviceDate = null
         )
         leadRepository.insert(lead)
-        leadRepository.insertTimeline(uuid(), id, "created", objectMapper.writeValueAsString(mapOf("channel" to req.channel, "source" to req.source)))
+        leadRepository.insertTimeline(nextRuntimeAuxId(), id, "created", objectMapper.writeValueAsString(mapOf("channel" to req.channel, "source" to req.source)))
         val triageResult = triageService.runTriage(req.raw_message, id)
         val aiTriage = triageService.toAiTriage(id, triageResult)
         leadRepository.insertOrReplaceTriage(aiTriage)
@@ -51,7 +52,7 @@ class LeadService(
     }
 
     fun createInquiry(message: String, contact: String?): LeadWithTriageAndTasks {
-        val id = uuid()
+        val id = nextRuntimeLeadId()
         val lead = Lead(
             id = id,
             channel = "whatsapp",
@@ -68,7 +69,7 @@ class LeadService(
             serviceDate = null
         )
         leadRepository.insert(lead)
-        leadRepository.insertTimeline(uuid(), id, "whatsapp_paste", objectMapper.writeValueAsString(mapOf("contact" to contact)))
+        leadRepository.insertTimeline(nextRuntimeAuxId(), id, "whatsapp_paste", objectMapper.writeValueAsString(mapOf("contact" to contact)))
         val triageResult = triageService.runTriage(message, id)
         val aiTriage = triageService.toAiTriage(id, triageResult)
         leadRepository.insertOrReplaceTriage(aiTriage)
@@ -84,7 +85,7 @@ class LeadService(
             leadRepository.updateStage(id, req.stage)
             if (before != null && before.stage != req.stage) {
                 leadRepository.insertTimeline(
-                    uuid(),
+                    nextRuntimeAuxId(),
                     id,
                     "stage_changed",
                     objectMapper.writeValueAsString(mapOf("from" to before.stage, "to" to req.stage))

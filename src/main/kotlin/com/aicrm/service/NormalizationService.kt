@@ -67,32 +67,19 @@ class NormalizationService {
         )
     }
 
-    private fun isZomateVertical(vertical: String) = vertical.startsWith("zomate_")
-
     private fun extractServiceName(text: String, vertical: String): String? {
         val lower = text.lowercase()
-        if (isZomateVertical(vertical)) {
-            if (Regex("試堂|體驗|trial").containsMatchIn(lower)) return "Trial session"
-            if (Regex("會員|membership|月費|package").containsMatchIn(lower)) return "Membership"
-            if (Regex("生酮|keto|飲食|營養").containsMatchIn(lower)) return "Nutrition / keto advisory"
-            if (Regex("一對一|私教|私人教練|personal\\s*trainer|\\bpt\\b").containsMatchIn(lower)) return "1-on-1 personal training"
-            if (Regex("健身|女教練|女子|gym|workout|fitness").containsMatchIn(lower)) return "Women’s gym / PT"
-        }
         if (vertical == "training" || vertical.startsWith("picolabbs_")) {
             if (Regex("nail|美甲|指甲").containsMatchIn(lower)) return "Nail course"
             if (Regex("beauty|美容|化妝|wellness").containsMatchIn(lower)) return "Beauty course"
             if (Regex("iwand|irelief|shield|picolabb", RegexOption.IGNORE_CASE).containsMatchIn(lower)) return "Product inquiry"
+            if (Regex("寵物|happy pet|狗|貓", RegexOption.IGNORE_CASE).containsMatchIn(text)) return "Pet product inquiry"
         }
         return null
     }
 
     fun getMissingFields(extracted: ExtractedFields, vertical: String): List<String> {
         val missing = mutableListOf<String>()
-        if (isZomateVertical(vertical)) {
-            if (extracted.serviceName == null) missing.add("session_type")
-            if (extracted.preferredDates.isNullOrEmpty() && extracted.preferredTime == null) missing.add("preferred_date_time")
-            if (extracted.location == null) missing.add("branch_tst_or_sheung_wan")
-        }
         if (vertical.startsWith("picolabbs_")) {
             if (extracted.serviceName == null) missing.add("product_or_service")
             if (extracted.preferredDates.isNullOrEmpty() && extracted.preferredTime == null) missing.add("preferred_date_time")

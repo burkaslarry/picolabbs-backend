@@ -1,8 +1,9 @@
 package com.aicrm.util
 
 /**
- * Normalizes [contact] so the same person typing phone/email in different formats
- * still groups together for "returning customer" stats.
+ * Normalizes [contact] for 「熟客」 grouping (repeat / 翻買): same business meaning as a unique customer key.
+ * - Phone: digits only (e.g. +852 9123 1001 and 85291231001 match).
+ * - Email: lowercased full address.
  */
 object ContactKey {
     fun normalize(raw: String?): String? {
