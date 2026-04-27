@@ -5,6 +5,7 @@ import com.aicrm.domain.Lead
 import com.aicrm.domain.SlotSuggestion
 import com.aicrm.domain.Task
 import com.aicrm.domain.TimelineEvent
+import com.aicrm.util.ContactKey
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
@@ -62,6 +63,31 @@ class LeadRepository(
     ).firstOrNull()
 
     fun countLeads(): Long = jdbc.queryForObject("SELECT COUNT(*) FROM aicrm_picolabbs_leads", Long::class.java) ?: 0L
+
+    /**
+     * For each lead id: how many leads share the same normalized contact, and this lead's visit order (1 = first inquiry).
+     */
+    fun buildContactInsightByLeadId(): Map<String, LeadContactInsight> {
+        val rows = jdbc.query(
+            "SELECT id, contact, created_at FROM aicrm_picolabbs_leads ORDER BY created_at ASC"
+        ) { rs, _ ->
+            Triple(rs.getString("id"), rs.getString("contact"), rs.getTimestamp("created_at").toInstant())
+        }
+        val keyed = rows.mapNotNull { (id, contact, created) ->
+            val k = ContactKey.normalize(contact) ?: return@mapNotNull null
+            Triple(id, k, created)
+        }
+        val byKey = keyed.groupBy { it.second }
+        val result = mutableMapOf<String, LeadContactInsight>()
+        for ((_, triples) in byKey) {
+            val sorted = triples.sortedBy { it.third }
+            val count = sorted.size
+            sorted.forEachIndexed { idx, t ->
+                result[t.first] = LeadContactInsight(sameContactLeadCount = count, visitNumber = idx + 1)
+            }
+        }
+        return result
+    }
 
     fun insert(lead: Lead) {
         jdbc.update(

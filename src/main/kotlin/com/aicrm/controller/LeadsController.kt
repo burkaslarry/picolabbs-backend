@@ -7,6 +7,7 @@ import com.aicrm.domain.sanitizeString
 import com.aicrm.domain.validateChannel
 import com.aicrm.domain.validateISODate
 import com.aicrm.domain.validateStage
+import com.aicrm.repository.LeadContactInsight
 import com.aicrm.repository.LeadRepository
 import com.aicrm.service.LeadService
 import com.aicrm.util.uuid
@@ -35,8 +36,9 @@ class LeadsController(
     ): List<Map<String, Any?>> {
         val ch = if (channel != null) validateChannel(channel) else null
         val st = if (stage != null) validateStage(stage) else null
+        val insights = leadRepository.buildContactInsightByLeadId()
         val leads = leadRepository.findAll(ch, st)
-        return leads.map { leadToMap(it) }
+        return leads.map { leadToMap(it, insights[it.id]) }
     }
 
     @GetMapping("/{id}")
@@ -47,8 +49,9 @@ class LeadsController(
         val tasks = leadRepository.getTasks(id)
         val timeline = leadRepository.getTimeline(id)
         val slots = leadRepository.getLatestSlotSuggestion(id)
+        val insights = leadRepository.buildContactInsightByLeadId()
         val map = mutableMapOf<String, Any?>()
-        map.putAll(leadToMap(lead))
+        map.putAll(leadToMap(lead, insights[id]))
         map["ai_triage"] = triage?.let { triageToMap(it) }
         map["tasks"] = tasks.map { taskToMap(it) }
         map["timeline"] = timeline.map { timelineToMap(it) }
@@ -64,8 +67,9 @@ class LeadsController(
             return ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "Invalid body")))
         }
         val result = leadService.createLead(req)
+        val insights = leadRepository.buildContactInsightByLeadId()
         val response = mapOf(
-            "lead" to leadToMap(result.lead),
+            "lead" to leadToMap(result.lead, insights[result.lead.id]),
             "ai_triage" to result.ai_triage?.let { triageToMap(it) },
             "tasks" to result.tasks.map { taskToMap(it) }
         )
@@ -78,7 +82,8 @@ class LeadsController(
         if (leadRepository.findById(id) == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("error" to "Lead not found"))
         val req = parsePatchLead(body)
         val updated = leadService.patchLead(id, req)
-        return ResponseEntity.ok(leadToMap(updated))
+        val insights = leadRepository.buildContactInsightByLeadId()
+        return ResponseEntity.ok(leadToMap(updated, insights[id]))
     }
 
     @PostMapping("/{id}/slots")
@@ -102,21 +107,33 @@ class LeadsController(
         return ResponseEntity.ok(taskToMap(task))
     }
 
-    private fun leadToMap(lead: com.aicrm.domain.Lead) = mapOf(
-        "id" to lead.id,
-        "channel" to lead.channel,
-        "raw_message" to lead.rawMessage,
-        "name" to lead.name,
-        "contact" to lead.contact,
-        "created_at" to lead.createdAt.toString(),
-        "updated_at" to lead.updatedAt.toString(),
-        "stage" to lead.stage,
-        "owner_id" to lead.ownerId,
-        "vertical" to lead.vertical,
-        "vertical_display_name" to lead.verticalDisplayName,
-        "source" to lead.source,
-        "service_date" to lead.serviceDate
-    )
+    private fun leadToMap(lead: com.aicrm.domain.Lead, insight: LeadContactInsight?): Map<String, Any?> {
+        val m = mutableMapOf<String, Any?>(
+            "id" to lead.id,
+            "channel" to lead.channel,
+            "raw_message" to lead.rawMessage,
+            "name" to lead.name,
+            "contact" to lead.contact,
+            "created_at" to lead.createdAt.toString(),
+            "updated_at" to lead.updatedAt.toString(),
+            "stage" to lead.stage,
+            "owner_id" to lead.ownerId,
+            "vertical" to lead.vertical,
+            "vertical_display_name" to lead.verticalDisplayName,
+            "source" to lead.source,
+            "service_date" to lead.serviceDate
+        )
+        if (insight != null) {
+            m["same_contact_lead_count"] = insight.sameContactLeadCount
+            m["returning_visit_number"] = insight.visitNumber
+            m["is_returning_customer"] = insight.sameContactLeadCount > 1
+        } else {
+            m["same_contact_lead_count"] = 1
+            m["returning_visit_number"] = 1
+            m["is_returning_customer"] = false
+        }
+        return m
+    }
 
     private fun triageToMap(t: com.aicrm.domain.AiTriage) = mapOf(
         "lead_id" to t.leadId,
