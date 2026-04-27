@@ -113,6 +113,14 @@ class LeadRepository(
         jdbc.update("UPDATE aicrm_picolabbs_leads SET vertical = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", vertical, id)
     }
 
+    /** [insert] 唔寫 created_at；示範 seed 用呢個補返先後次序（熟客第幾次）。 */
+    fun updateLeadTimestamps(id: String, createdAt: Instant, updatedAt: Instant) {
+        jdbc.update(
+            "UPDATE aicrm_picolabbs_leads SET created_at = ?, updated_at = ? WHERE id = ?",
+            Timestamp.from(createdAt), Timestamp.from(updatedAt), id
+        )
+    }
+
     fun getTriage(leadId: String): AiTriage? = jdbc.query(
         "SELECT * FROM aicrm_picolabbs_ai_triage WHERE lead_id = ?",
         triageRowMapper, leadId

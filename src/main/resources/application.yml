@@ -22,3 +22,8 @@ logging:
 app:
   db:
     dialect: postgresql
+
+# Prototype：POST /api/demo/seed-returning-customers 的 key；留空則用程式內預設（見 DemoSeedController）。
+picolabbs:
+  demo:
+    returning-seed-key: ${PICOLABBS_DEMO_SEED_KEY:}

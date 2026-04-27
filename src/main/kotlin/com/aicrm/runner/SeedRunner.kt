@@ -226,6 +226,7 @@ class SeedRunner(
                 serviceDate = null
             )
             leadRepository.insert(lead)
+            leadRepository.updateLeadTimestamps(id, now, now)
             leadRepository.insertTimeline(
                 timelineId,
                 id,
