@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 /**
- * 公開 Prototype 用：用預設 key 或環境變數 [PICOLABBS_DEMO_SEED_KEY] 觸發熟客示範寫入（幂等）。
- * 正式環境請改強密鑰或移除此端點。
+ * 可選：熟客示範寫入（幂等）。首選係 DB 執行 [migrations/005_returning_customer_demo.sql]。
+ * Prototype 可用預設 key；正式環境請改 [PICOLABBS_DEMO_SEED_KEY] 或關閉此端點。
  */
 @RestController
 @RequestMapping("/api/demo")

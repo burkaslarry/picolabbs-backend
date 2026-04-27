@@ -11,8 +11,8 @@ import java.time.Instant
 data class ReturningCustomerSeedResult(val inserted: Int, val metadataSynced: Boolean)
 
 /**
- * Idempotent 「熟客」示範：兩個電話 × 各兩筆查詢（+852 6111 2222、+852 9999 8888）。
- * 可由 ApplicationRunner 或 HTTP demo 端點觸發。
+ * 可選補救：兩個電話 × 各兩筆熟客示範（+852 6111 2222、+852 9999 8888）。
+ * 正式環境請以 Postgres 跑 [migrations/005_returning_customer_demo.sql]；此 service 只畀 HTTP「載入示範熟客」或臨時修數。
  */
 @Service
 class ReturningCustomerDemoService(
